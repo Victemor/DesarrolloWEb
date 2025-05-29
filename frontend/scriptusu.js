@@ -46,6 +46,7 @@ function listar(){
       redirect: "follow"
     };
     let ndoc = document.getElementById("numdoc").value;
+    
     //usuarios?id=user124
          //https://desarrolloseguro.netlify.app/.netlify/functions/usuarios
     fetch("https://desarrolloseguro.netlify.app/.netlify/functions/usuarios?iden="+ndoc, requestOptions)
