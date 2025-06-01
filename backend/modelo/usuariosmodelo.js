@@ -1,5 +1,5 @@
 class UsuariosController {
-  construct() {}
+  constructor() {} // ✅ Corregido: era "construct()"
 
   async consultarDetalle(req, res) {
     try {
@@ -19,42 +19,53 @@ class UsuariosController {
   }
 
   async ingresar(req, res) {
-  try {
-    console.log("Datos recibidos:", req.body);
+    try {
+      console.log("Datos recibidos:", req.body); // ✅ Debug
 
-    // Validación de objeto plano
-    if (typeof req.body !== 'object' || req.body === null || Array.isArray(req.body)) {
-      return res.status(400).send('Datos inválidos. Se esperaba un objeto plano.');
+      // Validación de objeto plano
+      if (typeof req.body !== 'object' || req.body === null || Array.isArray(req.body)) {
+        return res.status(400).send('Datos inválidos. Se esperaba un objeto plano.');
+      }
+
+      const admin = require('./firebaseAdmin');
+
+      // ✅ NUEVA IMPLEMENTACIÓN: Crear un objeto limpio con solo los campos necesarios
+      const userData = {
+        dni: req.body.dni || '',
+        nombre: req.body.nombre || '',
+        apellidos: req.body.apellidos || '',
+        email: req.body.email || '',
+        fechaCreacion: new Date().toISOString()
+      };
+
+      // ✅ VALIDACIÓN MEJORADA con logging detallado
+      const camposFaltantes = [];
+      if (!userData.dni || userData.dni.trim() === '') camposFaltantes.push('dni');
+      if (!userData.nombre || userData.nombre.trim() === '') camposFaltantes.push('nombre');
+      if (!userData.email || userData.email.trim() === '') camposFaltantes.push('email');
+      
+      if (camposFaltantes.length > 0) {
+        console.log("❌ Datos recibidos:", userData);
+        console.log("❌ Campos faltantes:", camposFaltantes);
+        return res.status(400).send(`Faltan campos requeridos: ${camposFaltantes.join(', ')}`);
+      }
+
+      console.log("✅ Datos válidos, guardando:", userData);
+
+      // Agrega el documento con ID generado automáticamente
+      const docRef = await admin.firestore().collection('users').add(userData);
+
+      console.log("✅ Usuario guardado con ID:", docRef.id);
+      res.status(200).json({ 
+        message: "Usuario agregado exitosamente", 
+        id: docRef.id 
+      });
+
+    } catch (err) {
+      console.error("❌ Error al guardar usuario:", err);
+      res.status(500).send(err.message);
     }
-
-    const admin = require('./firebaseAdmin');
-
-    // 🔥 SOLUCIÓN: Crear un objeto limpio con solo los campos necesarios
-    const userData = {
-      dni: req.body.dni || '',
-      nombre: req.body.nombre || '',
-      apellidos: req.body.apellidos || '',
-      email: req.body.email || '',
-      fechaCreacion: new Date().toISOString() // Opcional: agregar timestamp
-    };
-
-    // Validar que los campos requeridos no estén vacíos
-    if (!userData.dni || !userData.nombre || !userData.email) {
-      return res.status(400).send('Faltan campos requeridos: dni, nombre, email');
-    }
-
-    const docRef = await admin.firestore().collection('users').add(userData);
-    
-    res.status(200).json({ 
-      message: "Usuario agregado", 
-      id: docRef.id 
-    });
-    
-  } catch (err) {
-    console.error("Error al guardar usuario:", err);
-    res.status(500).send(err.message);
   }
-}
 }
 
 module.exports = new UsuariosController();
