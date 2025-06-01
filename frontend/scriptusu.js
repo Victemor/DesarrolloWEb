@@ -1,11 +1,17 @@
 function guardar(){
- 
     let apellidos='';
     let datoingresado = document.getElementById("correo").value;
  
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     event.preventDefault();
+
+    // ✅ DEBUGGING: Ver qué valores se están capturando
+    console.log("🔍 DEBUGGING - Valores capturados:");
+    console.log("DNI:", document.getElementById("dni").value);
+    console.log("Nombre:", document.getElementById("nombre").value);
+    console.log("Apellidos:", document.getElementById("apellidos").value);
+    console.log("Email:", document.getElementById("correo").value);
  
     let raw = JSON.stringify({
       "dni": document.getElementById("dni").value,
@@ -13,6 +19,10 @@ function guardar(){
       "apellidos": document.getElementById("apellidos").value,
       "email": document.getElementById("correo").value
     });
+
+    // ✅ DEBUGGING: Ver el JSON que se va a enviar
+    console.log("🔍 JSON a enviar:", raw);
+    console.log("🔍 Objeto parseado:", JSON.parse(raw));
  
     let requestOptions = {
       method: "POST",
@@ -21,10 +31,24 @@ function guardar(){
       redirect: "follow"
     };
  
+    console.log("🔍 Enviando petición...");
     fetch("https://desarrolloseguro.netlify.app/.netlify/functions/usuarios", requestOptions)
-      .then((response) => response.text())
-      .then((result) => console.log(result))
-      .catch((error) => console.error(error));  
+      .then((response) => {
+        console.log("🔍 Status de respuesta:", response.status);
+        return response.text();
+      })
+      .then((result) => {
+        console.log("🔍 Respuesta del servidor:", result);
+        if (result.includes("exitosamente")) {
+          alert("✅ Usuario guardado correctamente!");
+        } else {
+          alert("❌ Error: " + result);
+        }
+      })
+      .catch((error) => {
+        console.error("❌ Error en la petición:", error);
+        alert("❌ Error de conexión: " + error.message);
+      });  
 }
  
 function cargar(resultado){
