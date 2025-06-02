@@ -20,90 +20,44 @@ class UsuariosController {
 
   async ingresar(req, res) {
     try {
-      // 🔍 DEBUGGING PROFUNDO
-      console.log("🔍 === DEBUGGING COMPLETO ===");
-      console.log("🔍 req.body:", req.body);
-      console.log("🔍 req.body type:", typeof req.body);
-      console.log("🔍 req.body keys:", Object.keys(req.body || {}));
-      console.log("🔍 req.rawBody:", req.rawBody);
-      console.log("🔍 req.headers:", req.headers);
-      
-      // Validación de objeto plano
+      console.log("✅ Datos recibidos procesados:", req.body);
+
+      // Validación básica
       if (typeof req.body !== 'object' || req.body === null || Array.isArray(req.body)) {
-        console.log("❌ Datos inválidos - no es objeto plano");
         return res.status(400).send('Datos inválidos. Se esperaba un objeto plano.');
       }
 
       const admin = require('./firebaseAdmin');
 
-      // 🔍 INTENTAR DIFERENTES FORMAS DE OBTENER LOS DATOS
-      let userData;
-      
-      // Intento 1: req.body directo
-      if (req.body && typeof req.body === 'object') {
-        console.log("✅ Usando req.body directo");
-        userData = {
-          dni: req.body.dni || '',
-          nombre: req.body.nombre || '',
-          apellidos: req.body.apellidos || '',
-          email: req.body.email || '',
-          fechaCreacion: new Date().toISOString()
-        };
-      }
-      // Intento 2: Si req.body es string, parsearlo
-      else if (typeof req.body === 'string') {
-        console.log("🔄 req.body es string, parseando...");
-        const parsed = JSON.parse(req.body);
-        userData = {
-          dni: parsed.dni || '',
-          nombre: parsed.nombre || '',
-          apellidos: parsed.apellidos || '',
-          email: parsed.email || '',
-          fechaCreacion: new Date().toISOString()
-        };
-      }
-      else {
-        console.log("❌ No se pudo procesar req.body");
-        return res.status(400).send('No se pudo procesar los datos');
+      // Crear objeto limpio con los datos
+      const userData = {
+        dni: req.body.dni || '',
+        nombre: req.body.nombre || '',
+        apellidos: req.body.apellidos || '',
+        email: req.body.email || '',
+        fechaCreacion: new Date().toISOString()
+      };
+
+      // Validación de campos requeridos
+      if (!userData.dni || !userData.nombre || !userData.email) {
+        console.log("❌ Campos faltantes:", { dni: userData.dni, nombre: userData.nombre, email: userData.email });
+        return res.status(400).send('Faltan campos requeridos: dni, nombre, email');
       }
 
-      console.log("🔍 userData final:", userData);
+      console.log("✅ Guardando usuario:", userData);
 
-      // 🔍 VALIDACIÓN MÁS PERMISIVA PARA DEBUG
-      const camposVacios = [];
-      if (!userData.dni || userData.dni.trim() === '') camposVacios.push('dni');
-      if (!userData.nombre || userData.nombre.trim() === '') camposVacios.push('nombre');
-      if (!userData.email || userData.email.trim() === '') camposVacios.push('email');
-      
-      if (camposVacios.length > 0) {
-        console.log("❌ Campos vacíos:", camposVacios);
-        console.log("❌ userData completo:", JSON.stringify(userData, null, 2));
-        
-        // 🔍 MOSTRAR VALORES EXACTOS
-        console.log("🔍 Valores exactos:");
-        console.log(`dni: "${userData.dni}" (length: ${userData.dni ? userData.dni.length : 'undefined'})`);
-        console.log(`nombre: "${userData.nombre}" (length: ${userData.nombre ? userData.nombre.length : 'undefined'})`);
-        console.log(`email: "${userData.email}" (length: ${userData.email ? userData.email.length : 'undefined'})`);
-        
-        return res.status(400).send(`Campos vacíos encontrados: ${camposVacios.join(', ')}`);
-      }
-
-      console.log("✅ Datos válidos, guardando en Firestore...");
-
-      // Intentar guardar en Firestore
+      // Guardar en Firestore
       const docRef = await admin.firestore().collection('users').add(userData);
 
       console.log("✅ Usuario guardado con ID:", docRef.id);
       res.status(200).json({ 
         message: "Usuario agregado exitosamente", 
-        id: docRef.id,
-        data: userData
+        id: docRef.id 
       });
 
     } catch (err) {
-      console.error("❌ Error completo:", err);
-      console.error("❌ Error stack:", err.stack);
-      res.status(500).send(`Error del servidor: ${err.message}`);
+      console.error("❌ Error:", err);
+      res.status(500).send(err.message);
     }
   }
 }
